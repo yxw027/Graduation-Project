@@ -6,7 +6,7 @@
 clear;
 clc;
 close all;
-target = [10 8];
+target = [10 10];
 obs = [3 3;
     8 6];
 obs_r = 0.3;
@@ -74,7 +74,7 @@ m = 2;
 % mass of the vehicle
 xite1 = 0.5;
 xite2 = 6;
-k1 = 5;
+k1 = 1;
 k2 = 12;
 epc = 1;
 c = 2;
@@ -95,7 +95,7 @@ while dis_to_tar > 0.1
     e3(i, :) = x3_1 - x3d;
     de3(i, :) = x3_2 - x1_2;
     s3 = c * e3(i, :) + de3(i, :);
-%% Control law with Rotate Force Artificial Potiential Field
+
     e1(i, :) = x1_1 - target;
     de1(i, :) = x1_2;
     s1 = c * e1(i, :) + de1(i, :);
@@ -225,7 +225,7 @@ plot(e2(:, 1), de2(:, 1),  'g', 'Linewidth', 1.5);
 hold on;
 plot(e3(:, 1), de3(:, 1),  'b',  'Linewidth', 1.5);
 hold on;
-fimplicit(@(x, y) x + y,  'k',  'Linewidth', 1.5);
+fimplicit(@(x, y) c * x + y,  'k',  'Linewidth', 1.5);
 grid on;
 xlabel('e');
 ylabel('de');
