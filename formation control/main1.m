@@ -1,4 +1,4 @@
-%-----------This file aims to use control law to get the 
+%-----------This file aims to use optimal control law to get the 
 %-----------input of the second-integrator form state function, i.e.,
 %-----------dx1 = x2;
 %-----------dx2 = u
@@ -69,7 +69,7 @@ flag3 = false;
 
 %% main code
 % sample time
-dt = 0.1;
+dt = 0.05;
 i = 1;
 % LQR control parameters
 m = 2;
@@ -84,7 +84,7 @@ R1 = 2;
 K1 = lqr(A, B, Q1, R1);
 K2 = lqr(A, B, Q2, R2);
 epc = 1;
-while dis_to_tar > 0.2
+while dis_to_tar > 0.1
     dis_to_tar = norm(x1_1 - target);
     [dis_to_obc, inx1] = min([norm(x1_1 - obs(1, :)); norm(x1_1 - obs(2, :))]);
     [dis_to_obc2, inx2] = min([norm(x2_1 - obs(1, :)); norm(x2_1 - obs(2, :))]);
