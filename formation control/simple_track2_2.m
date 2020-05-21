@@ -1,4 +1,4 @@
-%-----------This file aims to use control law to get the 
+%-----------This file aims to use optimal control law to get the 
 %-----------input of the second-integrator form state function, i.e.,
 %-----------dx1 = x2;
 %-----------dx2 = u
