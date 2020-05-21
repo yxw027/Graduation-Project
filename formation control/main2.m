@@ -301,3 +301,10 @@ function u = saturation_input(x)
     end
 
 end
+function circle(c, r, color)
+    x = c(1) - r;
+    y = c(2) - r;
+    w = 2 * r;
+    h = 2 * r;
+    rectangle('position',[x, y, w, h],'curvature',[1,1],'edgecolor',color);
+end
