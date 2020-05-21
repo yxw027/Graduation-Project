@@ -243,14 +243,7 @@ xlabel('Time(sec)');
 ylabel('speed(m/s)');
 title('Velocity');
 legend('Leader',  'Follower1',  'Follower2');
-figure(6);
-plot(t, s2(:, 1),  'r',  'Linewidth', 1.5);
-hold on;
-grid on;
-xlabel('Time(sec)');
-ylabel('s2');
-title('s2');
-legend('Follower2');
+
 
 %% functions
 function f = rotate_force(pos, vel, obc)
