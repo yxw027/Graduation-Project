@@ -1,4 +1,4 @@
-%-----------This file aims to use optimal control law to get the 
+%-----------This file aims to use sliding mode control law to get the 
 %-----------input of the second-integrator form state function, i.e.,
 %-----------dx1 = x2;
 %-----------dx2 = u
@@ -64,8 +64,6 @@ vel3 = zeros(1, 2);
 
 center = zeros(1, 3);
 dis_to_tar = norm(x1_1 - target);
-flag2 = false;
-flag3 = false;
 
 %% main code
 % sample time
@@ -74,16 +72,13 @@ i = 1;
 % LQR control parameters
 m = 2;
 % mass of the vehicle
-A = [0 1;
-    0 0];
-B = [0; 1 / m];
-Q2 = 30 * eye(2);
-R2 = 0.1;
-Q1 = 1 * eye(2);
-R1 = 2;
-K1 = lqr(A, B, Q1, R1);
-K2 = lqr(A, B, Q2, R2);
-while dis_to_tar > 0.2
+xite1 = 0.5;
+xite2 = 6;
+k1 = 5;
+k2 = 12;
+epc = 1;
+c = 2;
+while dis_to_tar > 0.1
     dis_to_tar = norm(x1_1 - target);
     [dis_to_obc, inx1] = min([norm(x1_1 - obs(1, :)); norm(x1_1 - obs(2, :))]);
     [dis_to_obc2, inx2] = min([norm(x2_1 - obs(1, :)); norm(x2_1 - obs(2, :))]);
@@ -94,48 +89,52 @@ while dis_to_tar > 0.2
     x2d = x1_1 + F(1, :);
     e2(i, :) = x2_1 - x2d;
     de2(i, :) = x2_2 - x1_2;
-    s2 = e2(i, :) + de2(i, :);
+    s2 = c * e2(i, :) + de2(i, :);
 
     x3d = x1_1 + F(2, :);
     e3(i, :) = x3_1 - x3d;
     de3(i, :) = x3_2 - x1_2;
-    s3 = e3(i, :) + de3(i, :);
+    s3 = c * e3(i, :) + de3(i, :);
 %% Control law with Rotate Force Artificial Potiential Field
     e1(i, :) = x1_1 - target;
     de1(i, :) = x1_2;
-    s1 = e1(i, :) + de1(i, :);
+    s1 = c * e1(i, :) + de1(i, :);
 
     % control input of agent 1
+    % sliding mode control
+    temp1 = -k1 * s1 - xite1 * tanh(s1) - x1_2;
     if dis_to_obc < reactR
         direction = rotate_force(x1_1, x1_2, obs(inx1, :));
-        v1 = -K1 * [e1(i, :); de1(i, :)];
-        g = 10 * norm(v1);
+        v1 = temp1;
+        g = epc * norm(v1);
         v2 = -g * direction * ((1 / (dis_to_obc - obs_r)) - (1 / (reactR - obs_r)));
         u1(i, :) = v1 + v2;
     else
-        u1(i, :) = -K1 * [e1(i, :); de1(i, :)];
+        u1(i, :) = temp1;
     end
 
-    % control input of agent 2
+    % control input of agent2 and agent3
+    % sliding mode control variable
+    temp2 = -k2 * s2 - xite2 * tanh(s2) + x1_2 - x2_2 + u1(i, :);
     if dis_to_obc2 < reactR
         direction = rotate_force(x2_1, x2_2, obs(inx2, :));
-        v1 = -K2 * [e2(i, :); de2(i, :)] + u1(i, :);
-        g = 10 * norm(v1);
+        v1 = temp2;
+        g = epc * norm(v1);
         v2 = -g * direction * ((1 / (dis_to_obc2 - obs_r)) - (1 / (reactR - obs_r)));
         u2(i, :) = v1 + v2;
     else
-        u2(i, :) = -K2 * [e2(i, :); de2(i, :)] + u1(i, :);
+        u2(i, :) = temp2;
     end
 
-    % control input for agent 3
+    temp3 = -k2 * s3 - xite2 * tanh(s3) + x1_2 - x3_2 + u1(i, :);
     if dis_to_obc3 < reactR
         direction = rotate_force(x3_1, x3_2, obs(inx3, :));
-        v1 = -K2 * [e3(i, :); de3(i, :)] + u1(i, :);
-        g = 10 * norm(v1);
+        v1 = temp3;
+        g = epc * norm(v1);
         v2 = -g * direction * ((1 / (dis_to_obc3 - obs_r)) - (1 / (reactR - obs_r)));
         u3(i, :) = v1 + v2;
     else
-        u3(i, :) = -K2 * [e3(i, :); de3(i, :)] + u1(i, :);
+        u3(i, :) = temp3;
     end
 
 
@@ -176,10 +175,10 @@ while dis_to_tar > 0.2
         plot(pos(k ,1), pos(k, 2), 'b');
         hold on;
     end
-    % pause(0.001);
+    pause(0.00001);
     i = i + 1;
 end
-csvwrite('F:\Documents\graduationProject\project\UAV\track2\target1.csv', center);
+% csvwrite('F:\Documents\graduationProject\project\UAV\track2\target1.csv', center);
 %% plot
 pos = [x1_1; x2_1; x3_1];
 k = convhull(pos);
@@ -221,17 +220,17 @@ xlabel('Time(sec)');
 ylabel('Control input(N)');
 title('Control inputs');
 legend('Leader x',  'Leader y',  'Follower1 x',  'Follower1 y',  'Follower2 x',  'Follower2 y',  'Location',  'northeast');
-% figure(4);
-% plot(e2(:, 1), de2(:, 1),  'g', 'Linewidth', 1.5);
-% hold on;
-% plot(e3(:, 1), de3(:, 1),  'b',  'Linewidth', 1.5);
-% hold on;
-% fimplicit(@(x, y) x + y,  'k',  'Linewidth', 1.5);
-% grid on;
-% xlabel('e');
-% ylabel('de');
-% title('Sliding mode');
-% legend('Follower1',  'Follower2',  's = 0',  'Location',  'southwest');
+figure(4);
+plot(e2(:, 1), de2(:, 1),  'g', 'Linewidth', 1.5);
+hold on;
+plot(e3(:, 1), de3(:, 1),  'b',  'Linewidth', 1.5);
+hold on;
+fimplicit(@(x, y) x + y,  'k',  'Linewidth', 1.5);
+grid on;
+xlabel('e');
+ylabel('de');
+title('Sliding mode');
+legend('Follower1',  'Follower2',  's = 0');
 figure(5);
 plot(t, vel1(:, 1),  'r',  'Linewidth', 1.5);
 hold on;
@@ -244,6 +243,15 @@ xlabel('Time(sec)');
 ylabel('speed(m/s)');
 title('Velocity');
 legend('Leader',  'Follower1',  'Follower2');
+figure(6);
+plot(t, s2(:, 1),  'r',  'Linewidth', 1.5);
+hold on;
+grid on;
+xlabel('Time(sec)');
+ylabel('s2');
+title('s2');
+legend('Follower2');
+
 %% functions
 function f = rotate_force(pos, vel, obc)
     x = pos(1);
